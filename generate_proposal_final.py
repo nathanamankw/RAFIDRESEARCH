@@ -1,8 +1,7 @@
 """
 FINAL research proposal PDF.
-Technical depth (equations, variables, diagrams) + plain English explanations.
-Every formula is followed by "In plain English: ..."
-Structured like an academic paper but readable by anyone.
+Technical depth + plain English. Colour-coded walkthrough.
+No em dashes. Human, natural tone.
 """
 
 from reportlab.lib.pagesizes import letter
@@ -21,12 +20,23 @@ OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "RESEARCH_PROPOSAL.pdf")
 
 # ── colours ──────────────────────────────────────────────────────────
 DARK     = HexColor("#1a1a2e")
-ACCENT   = HexColor("#2c3e7a")
+NAVY     = HexColor("#1b3a5c")
+BLUE     = HexColor("#2c6fbb")
+TEAL     = HexColor("#1a8a7d")
 RED      = HexColor("#c0392b")
 GREEN    = HexColor("#27854a")
-LIGHT_BG = HexColor("#f4f6fb")
-WARN_BG  = HexColor("#fff8e1")
-GREEN_BG = HexColor("#edf7ee")
+ORANGE   = HexColor("#d4760a")
+PURPLE   = HexColor("#6c3483")
+
+# Backgrounds
+BG_BLUE   = HexColor("#eaf2fb")
+BG_TEAL   = HexColor("#e8f6f3")
+BG_RED    = HexColor("#fdecea")
+BG_GREEN  = HexColor("#edf7ee")
+BG_ORANGE = HexColor("#fef5e7")
+BG_PURPLE = HexColor("#f4ecf7")
+BG_GREY   = HexColor("#f5f5f5")
+
 DGREY    = HexColor("#2d2d2d")
 MGREY    = HexColor("#666666")
 LGREY    = HexColor("#dcdcdc")
@@ -35,8 +45,8 @@ WHITE    = HexColor("#ffffff")
 
 class CalloutBox(Flowable):
     """Shaded callout with left accent bar."""
-    def __init__(self, width, content_paragraph, bg_color=LIGHT_BG,
-                 bar_color=ACCENT, padding=12):
+    def __init__(self, width, content_paragraph, bg_color=BG_BLUE,
+                 bar_color=BLUE, padding=12):
         Flowable.__init__(self)
         self.bwidth = width
         self.content = content_paragraph
@@ -56,36 +66,55 @@ class CalloutBox(Flowable):
 
 
 class DiagramBox(Flowable):
-    """Simple text-based diagram in a bordered box."""
-    def __init__(self, width, lines, title=""):
+    """Text-based diagram in a bordered box."""
+    def __init__(self, width, lines, title="", bar_color=NAVY):
         Flowable.__init__(self)
         self.bwidth = width
         self.lines = lines
         self.title = title
+        self.bar = bar_color
         self.line_h = 14
         self.pad = 14
-        title_h = 18 if title else 0
+        title_h = 20 if title else 0
         self.height = title_h + len(lines) * self.line_h + 2 * self.pad
 
     def draw(self):
         c = self.canv
-        # border
         c.setStrokeColor(LGREY)
         c.setFillColor(WHITE)
         c.roundRect(0, 0, self.bwidth, self.height, 4, fill=1, stroke=1)
+        # top accent bar
+        c.setFillColor(self.bar)
+        c.rect(0, self.height - 3, self.bwidth, 3, fill=1, stroke=0)
         y = self.height - self.pad
-        # title
         if self.title:
             c.setFont("Helvetica-Bold", 10)
-            c.setFillColor(ACCENT)
-            c.drawCentredString(self.bwidth / 2, y - 10, self.title)
-            y -= 18
-        # lines
+            c.setFillColor(self.bar)
+            c.drawCentredString(self.bwidth / 2, y - 12, self.title)
+            y -= 20
         c.setFont("Courier", 9)
         c.setFillColor(DGREY)
         for ln in self.lines:
             c.drawCentredString(self.bwidth / 2, y - 10, ln)
             y -= self.line_h
+
+
+class SectionBanner(Flowable):
+    """Coloured banner for section headers."""
+    def __init__(self, width, text, color=NAVY):
+        Flowable.__init__(self)
+        self.width = width
+        self.height = 28
+        self.text = text
+        self.color = color
+
+    def draw(self):
+        c = self.canv
+        c.setFillColor(self.color)
+        c.roundRect(0, 0, self.width, self.height, 4, fill=1, stroke=0)
+        c.setFillColor(WHITE)
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(12, 8, self.text)
 
 
 def build_pdf():
@@ -108,9 +137,6 @@ def build_pdf():
         "Author": ParagraphStyle("Au2", parent=styles["Normal"],
             fontSize=10.5, leading=14, alignment=TA_CENTER,
             spaceAfter=2, textColor=MGREY, fontName="Helvetica"),
-        "Sec": ParagraphStyle("Sec2", parent=styles["Heading1"],
-            fontSize=13.5, leading=17, spaceBefore=18, spaceAfter=10,
-            textColor=ACCENT, fontName="Helvetica-Bold"),
         "Sub": ParagraphStyle("SubH2", parent=styles["Heading2"],
             fontSize=11, leading=14, spaceBefore=14, spaceAfter=6,
             textColor=DARK, fontName="Helvetica-Bold"),
@@ -133,22 +159,20 @@ def build_pdf():
             textColor=DGREY, fontName="Helvetica"),
         "Question": ParagraphStyle("Q2", parent=styles["Normal"],
             fontSize=12, leading=17, alignment=TA_CENTER,
-            spaceBefore=6, spaceAfter=6, textColor=ACCENT,
+            spaceBefore=6, spaceAfter=6, textColor=NAVY,
             fontName="Helvetica-BoldOblique"),
         "Small": ParagraphStyle("Sm2", parent=styles["Normal"],
             fontSize=9, leading=12, alignment=TA_CENTER,
             spaceAfter=4, textColor=MGREY, fontName="Helvetica"),
-        "Ref": ParagraphStyle("Ref2", parent=styles["Normal"],
-            fontSize=9, leading=12, alignment=TA_LEFT,
-            spaceAfter=4, textColor=DGREY, fontName="Helvetica",
-            leftIndent=18, firstLineIndent=-18),
     }
 
     story = []
 
     # ── helpers ──────────────────────────────────────────────────────
-    def sec(num, title):
-        story.append(Paragraph(f"{num}&nbsp;&nbsp;&nbsp;{title.upper()}", sty["Sec"]))
+    def sec(num, title, color=NAVY):
+        story.append(Spacer(1, 14))
+        story.append(SectionBanner(W, f"  {num}   {title.upper()}", color))
+        story.append(Spacer(1, 10))
 
     def sub(num, title):
         story.append(Paragraph(f"{num}&nbsp;&nbsp;&nbsp;{title}", sty["Sub"]))
@@ -157,7 +181,6 @@ def build_pdf():
         story.append(Paragraph(text, sty["Body"]))
 
     def plain(text):
-        """'In plain English' explanation after an equation."""
         story.append(Paragraph(f"<i>In plain English:</i> {text}", sty["Plain"]))
 
     def bullet(text):
@@ -173,19 +196,13 @@ def build_pdf():
         story.append(HRFlowable(width="100%", thickness=0.5, color=LGREY,
                                 spaceAfter=10, spaceBefore=10))
 
-    def callout(text, bg=LIGHT_BG, bar=ACCENT):
+    def callout(text, bg=BG_BLUE, bar=BLUE):
         p = Paragraph(text, sty["Callout"])
         story.append(CalloutBox(W, p, bg_color=bg, bar_color=bar))
         gap(8)
 
-    def warn(text):
-        callout(text, bg=WARN_BG, bar=RED)
-
-    def success(text):
-        callout(text, bg=GREEN_BG, bar=GREEN)
-
-    def diagram(lines, title=""):
-        story.append(DiagramBox(W, lines, title))
+    def diagram(lines, title="", bar=NAVY):
+        story.append(DiagramBox(W, lines, title, bar_color=bar))
         gap(10)
 
     def make_table(data, col_widths=None, header=True):
@@ -207,14 +224,14 @@ def build_pdf():
         if header:
             cmds += [
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("BACKGROUND", (0, 0), (-1, 0), LIGHT_BG),
+                ("BACKGROUND", (0, 0), (-1, 0), BG_GREY),
                 ("TEXTCOLOR", (0, 0), (-1, 0), DARK),
             ]
         t.setStyle(TableStyle(cmds))
         story.append(t)
         gap(10)
 
-    P = lambda t: Paragraph(t, sty["Body"])  # shortcut for table cells
+    P = lambda t: Paragraph(t, sty["Body"])
 
     # ==================================================================
     #  TITLE PAGE
@@ -226,9 +243,7 @@ def build_pdf():
         sty["Title"]
     ))
     gap(6)
-    story.append(Paragraph(
-        "Research Proposal", sty["Subtitle"]
-    ))
+    story.append(Paragraph("Research Proposal", sty["Subtitle"]))
     gap(16)
     story.append(Paragraph("Nathan Amankwah", sty["Author"]))
     story.append(Paragraph("Prepared for Prof. Rafid Mahmood", sty["Author"]))
@@ -240,7 +255,8 @@ def build_pdf():
     callout(
         "<b>One-sentence summary:</b> Prof. Mahmood's ICLR paper models how one AI company "
         "routes tasks for one human user. This proposal asks: what changes when the user is an "
-        "AI agent that can switch between multiple competing providers instantly?"
+        "AI agent that can switch between multiple competing providers instantly?",
+        bg=BG_BLUE, bar=NAVY
     )
     gap(10)
 
@@ -249,23 +265,23 @@ def build_pdf():
     gap(4)
     toc = [
         ("1", "Introduction", "What this research is about and why it matters now"),
-        ("2", "Background", "Prof. Mahmood's framework — every variable and equation explained simply"),
+        ("2", "Background", "Prof. Mahmood's framework, every variable and equation explained simply"),
         ("3", "What's Changing", "The shift from human users to AI agents, and from one provider to many"),
-        ("4", "Proposed Model", "The new game — technical setup with plain-English explanations"),
+        ("4", "Proposed Model", "The new game, with technical setup and plain-English explanations"),
         ("5", "Expected Results", "What we think happens to each of Mahmood's findings"),
         ("6", "Why This Project", "Why this is the right research for Prof. Mahmood's program"),
         ("7", "Methodology", "How the work gets done"),
     ]
     for num, title, desc in toc:
         story.append(Paragraph(
-            f"<b>{num}.</b>&nbsp;&nbsp;{title} — <i>{desc}</i>", sty["Bullet"]
+            f"<b>{num}.</b>&nbsp;&nbsp;{title}: <i>{desc}</i>", sty["Bullet"]
         ))
     story.append(PageBreak())
 
     # ==================================================================
     #  1. INTRODUCTION
     # ==================================================================
-    sec("1", "Introduction")
+    sec("1", "Introduction", NAVY)
 
     body(
         "AI companies like OpenAI, Anthropic, and Google face a constant trade-off: send your "
@@ -275,9 +291,9 @@ def build_pdf():
     )
     body(
         "Prof. Mahmood's ICLR 2026 paper studied this as a strategic game. The company picks "
-        "which model to use. The user reacts — if the model keeps failing, the user gives up. "
+        "which model to use. The user reacts. If the model keeps failing, the user gives up. "
         "He showed that the company's cost-saving strategy can directly hurt users, and in the "
-        "worst case, companies are motivated to deliberately slow things down."
+        "worst case, companies are actually motivated to deliberately slow things down."
     )
     body(
         "That paper models <b>one company</b> and <b>one human user</b>. But the AI market of "
@@ -290,8 +306,8 @@ def build_pdf():
     )
     bullet(
         "<b>Multiple providers compete for the same traffic.</b> An AI agent holds API keys for "
-        "OpenAI, Anthropic, and Google at the same time. Switching providers costs nothing — "
-        "the agent just calls a different endpoint."
+        "OpenAI, Anthropic, and Google at the same time. Switching providers costs nothing. "
+        "The agent just calls a different endpoint."
     )
     gap(4)
     body("This proposal studies the natural next question:")
@@ -305,8 +321,8 @@ def build_pdf():
 
     body("We aim to contribute four things:")
     bullet(
-        "<b>Agent behavior characterization.</b> How does an AI agent decide when to stay with "
-        "a provider vs. switch? How does this differ from a human?"
+        "<b>Agent behavior.</b> How does an AI agent decide when to stay with "
+        "a provider versus switch? How does this differ from a human?"
     )
     bullet(
         "<b>Multi-provider equilibrium.</b> When providers compete for agent traffic, what "
@@ -324,9 +340,9 @@ def build_pdf():
     story.append(PageBreak())
 
     # ==================================================================
-    #  2. BACKGROUND — MAHMOOD'S FRAMEWORK EXPLAINED
+    #  2. BACKGROUND
     # ==================================================================
-    sec("2", "Background: Prof. Mahmood's Framework")
+    sec("2", "Background: Prof. Mahmood's Framework", BLUE)
 
     body(
         "Before presenting the new model, we walk through every key variable and equation in "
@@ -335,76 +351,74 @@ def build_pdf():
 
     sub("2.1", "The Players and Setup")
 
-    body(
-        "The game has two players:"
+    body("The game has two players:")
+    bullet(
+        "<b>The provider</b> (the AI company). Has two models: M<sub>1</sub> (standard, cheap) "
+        "and M<sub>2</sub> (reasoning, expensive)."
     )
     bullet(
-        "<b>The provider</b> (the AI company) — has two models: M<sub>1</sub> (standard/cheap) "
-        "and M<sub>2</sub> (reasoning/expensive)."
-    )
-    bullet(
-        "<b>The user</b> (the person) — sends a task and wants it completed."
+        "<b>The user</b> (the person). Sends a task and wants it completed."
     )
     gap(4)
     body(
-        "This is a <b>Stackelberg game</b> — a type of game where one player moves first and "
+        "This is a <b>Stackelberg game</b>, a type of game where one player moves first and "
         "the other reacts. Here, the provider moves first (choosing the routing strategy) and "
         "the user reacts (deciding whether to keep trying or give up)."
     )
 
-    sub("2.2", "The Variables — What Each One Means")
+    sub("2.2", "The Variables")
 
     make_table(
         [
-            [P("<b>Variable</b>"), P("<b>Name</b>"), P("<b>What it means (plain English)</b>"), P("<b>Example</b>")],
+            [P("<b>Variable</b>"), P("<b>Name</b>"), P("<b>What it means</b>"), P("<b>Example</b>")],
             [P("M<sub>1</sub>, M<sub>2</sub>"), P("Models"), P("The two AI models the company offers"), P("GPT-4o mini (cheap) and GPT-4o (expensive)")],
             [P("c<sub>i</sub>"), P("Compute cost"), P("How much it costs the company each time the model runs"), P("$0.01 per call for M1, $0.10 for M2")],
             [P("t<sub>i</sub>"), P("Delay cost"), P("How much time the user loses waiting for a response"), P("2 seconds for M1, 15 seconds for M2")],
-            [P("p<sub>i</sub>"), P("Success rate"), P("Chance the model gets your task right on a single try"), P("40% for M1, 80% for M2")],
+            [P("p<sub>i</sub>"), P("Success rate"), P("Chance the model gets the task right on a single try"), P("40% for M1, 80% for M2")],
             [P("V"), P("Task value"), P("How much completing the task is worth to the user"), P("A $500 contract analysis is high V")],
-            [P("P"), P("Churn penalty"), P("How much the company loses if the user gives up and leaves"), P("Lost subscription revenue — $20/month")],
-            [P("i"), P("Initial model"), P("Which model the provider sends your task to first"), P("i=1 means start with the cheap model")],
+            [P("P"), P("Churn penalty"), P("How much the company loses if the user gives up and leaves"), P("Lost subscription revenue, maybe $20/month")],
+            [P("i"), P("Initial model"), P("Which model the provider sends the task to first"), P("i=1 means start with the cheap model")],
             [P("s"), P("Cascade rate"), P("If the first model fails, the chance of escalating to model 2"), P("s=0.5 means 50% chance of escalating")],
-            [P("q"), P("Quit rate"), P("How likely the user is to give up after a failure"), P("q=0.3 means 30% chance of giving up each round")],
+            [P("q"), P("Quit rate"), P("How likely the user is to give up after a failure"), P("q=0.3 means 30% chance of quitting each round")],
         ],
         col_widths=[W*0.10, W*0.13, W*0.47, W*0.30],
     )
 
-    sub("2.3", "The Key Equation — Net Value Per Pass")
+    sub("2.3", "The Key Equation: Net Value Per Pass")
 
     body("The most important formula in the paper:")
     eq("&xi;<sub>i</sub> = V &times; p<sub>i</sub> &minus; t<sub>i</sub>")
     plain(
-        "\"Is this model worth my time?\" Take the value of completing the task (V) times "
-        "the chance the model succeeds (p<sub>i</sub>), and subtract the time you spend waiting "
+        "\"Is this model worth my time?\" Take the value of completing the task (V), multiply "
+        "by the chance the model succeeds (p<sub>i</sub>), then subtract the time you spend waiting "
         "(t<sub>i</sub>). If the answer is positive, the model is worth using. If negative, "
         "you're wasting your time."
     )
     gap(4)
     body("This single number determines everything about how the user behaves:")
     bullet(
-        "If <b>&xi;<sub>i</sub> &gt; 0</b>, the model is <b>value-dominated</b> — the expected "
+        "If <b>&xi;<sub>i</sub> &gt; 0</b>, the model is <b>value-dominated</b>. The expected "
         "payoff is worth the wait. The user keeps trying."
     )
     bullet(
-        "If <b>&xi;<sub>i</sub> &lt; 0</b>, the model is <b>latency-dominated</b> — the wait "
+        "If <b>&xi;<sub>i</sub> &lt; 0</b>, the model is <b>latency-dominated</b>. The wait "
         "isn't worth it. The user should give up."
     )
 
     callout(
         "<b>Example:</b> A lawyer analyzing a contract (V = $500) uses a model with 80% success "
         "rate (p = 0.80) and 15-second wait (t = $0.05 in time-value). Net value: "
-        "$500 &times; 0.80 &minus; $0.05 = $399.95. Strongly positive — absolutely worth waiting. "
+        "$500 &times; 0.80 &minus; $0.05 = $399.95. Strongly positive, absolutely worth waiting. "
         "A student with a trivial question (V = $1) using a slow model (t = $0.10): "
-        "$1 &times; 0.40 &minus; $0.10 = $0.30. Barely positive — close to giving up."
+        "$1 &times; 0.40 &minus; $0.10 = $0.30. Barely positive, close to giving up.",
+        bg=BG_BLUE, bar=BLUE
     )
 
-    sub("2.4", "The Markov Chain — How the Game Plays Out Step by Step")
+    sub("2.4", "The Markov Chain: How the Game Plays Out")
 
     body(
-        "Mahmood models the interaction as a <b>Markov chain</b> — a step-by-step process where "
-        "what happens next depends only on where you are now, not on what happened before. "
-        "Here's how it flows:"
+        "Mahmood models the interaction as a <b>Markov chain</b>, a step-by-step process where "
+        "what happens next depends only on where you are now. Here is the flow:"
     )
     diagram([
         "User sends task",
@@ -431,20 +445,20 @@ def build_pdf():
         "       |",
         "       v",
         "  Try Model 1 again (loop back to top)",
-    ], title="Mahmood (2026): Markov Model of Provider-User Interaction")
+    ], title="Mahmood (2026): Markov Model of Provider-User Interaction", bar=BLUE)
 
     plain(
-        "You send a task. The provider picks a model. If it works, great — you're done. "
+        "You send a task. The provider picks a model. If it works, great, you're done. "
         "If it fails, you either give up (with probability q) or try again. If you try again, "
         "the provider might escalate to the better model (with probability s) or stick with "
-        "the same one. This keeps going until the task is done or you give up."
+        "the same one. This keeps going until the task is done or you walk away."
     )
 
     sub("2.5", "The User's Problem")
     body("The user wants to maximize their expected payoff:")
     eq("U<sub>i</sub>(s, q) = V &times; S<sub>i</sub>(s, q) &minus; L<sub>i</sub>(s, q)")
     plain(
-        "Your utility = (value of completing the task &times; chance of eventually succeeding) "
+        "Your utility equals (value of completing the task times chance of eventually succeeding) "
         "minus (total time spent waiting across all attempts). The user picks the quit rate q "
         "that makes this as large as possible."
     )
@@ -453,12 +467,12 @@ def build_pdf():
     body("The provider wants to minimize their total cost:")
     eq("J<sub>i</sub>(s, q) = C<sub>i</sub>(s, q) + P &times; (1 &minus; S<sub>i</sub>(s, q))")
     plain(
-        "Provider's cost = (total compute cost across all attempts) + (penalty if the user gives "
+        "Provider's cost equals (total compute cost across all attempts) plus (penalty if the user gives "
         "up). The provider picks the routing (i, s) that makes this as small as possible, knowing "
         "how the user will react."
     )
 
-    sub("2.7", "The Four Regimes — Mahmood's Theorem 2")
+    sub("2.7", "The Four Regimes (Theorem 2)")
 
     body(
         "The most important result in the paper. How the user behaves depends entirely on "
@@ -470,21 +484,21 @@ def build_pdf():
             [P("<b>Regime</b>"), P("<b>Condition</b>"), P("<b>User behavior</b>"), P("<b>Plain English</b>")],
             [P("1"), P("&xi;<sub>1</sub> &gt; 0<br/>&xi;<sub>2</sub> &gt; 0"),
              P("q* = 0<br/>(never quits)"),
-             P("Both models are worth the wait. User stays no matter what the provider does.")],
+             P("Both models are worth the wait. User stays no matter what.")],
             [P("2"), P("&xi;<sub>1</sub> &lt; 0<br/>&xi;<sub>2</sub> &lt; 0"),
              P("q* = 1<br/>(always quits)"),
              P("Neither model is worth the wait. User gives up immediately.")],
             [P("3"), P("&xi;<sub>1</sub> &lt; 0<br/>&xi;<sub>2</sub> &gt; 0"),
              P("q* depends on s"),
-             P("Cheap model is a waste of time, expensive model is worth it. User stays only if the cascade chance s is high enough.")],
+             P("Cheap model is a waste of time, expensive one is worth it. User stays only if the cascade chance is high enough.")],
             [P("4"), P("&xi;<sub>1</sub> &gt; 0<br/>&xi;<sub>2</sub> &lt; 0"),
              P("q* depends on s"),
-             P("Cheap model is worth it, expensive model is too slow. User stays only if the cascade chance s is low enough (so they don't get sent to the slow model).")],
+             P("Cheap model is worth it, expensive one is too slow. User stays only if the cascade chance is low enough.")],
         ],
         col_widths=[W*0.07, W*0.14, W*0.22, W*0.57],
     )
 
-    sub("2.8", "The Throttling Problem — Mahmood's Proposition 2")
+    sub("2.8", "The Throttling Problem (Proposition 2)")
     body("The paper's scariest finding:")
     eq("If P &le; min{c<sub>1</sub>/p<sub>1</sub>, c<sub>2</sub>/p<sub>2</sub>}, then inflating t<sub>i</sub> reduces provider cost.")
     plain(
@@ -494,7 +508,7 @@ def build_pdf():
         "The company prefers you leave."
     )
 
-    sub("2.9", "The Misalignment Gap — Mahmood's Proposition 1")
+    sub("2.9", "The Misalignment Gap (Proposition 1)")
     eq("&Delta;U = max<sub>i,s</sub> U<sub>i</sub>(s, q*) &minus; U<sub>i*</sub>(s*, q*)")
     plain(
         "The misalignment gap is the difference between the best routing for the user and "
@@ -508,23 +522,23 @@ def build_pdf():
     # ==================================================================
     #  3. WHAT'S CHANGING
     # ==================================================================
-    sec("3", "What's Changing: The 2026 Shift")
+    sec("3", "What's Changing: The 2026 Shift", TEAL)
 
     body("Mahmood (2026) models one company and one human. Two things have changed:")
 
     sub("3.1", "Change 1: The User Is Now an AI Agent")
     body(
-        "In 2026, a growing share of API calls come from AI agents — software that calls models "
+        "In 2026, a growing share of API calls come from AI agents, software that calls models "
         "automatically. These agents behave completely differently from humans:"
     )
 
     make_table(
         [
             [P("<b>Property</b>"), P("<b>Human user</b>"), P("<b>AI agent</b>")],
-            [P("Patience"), P("Gets frustrated waiting"), P("Doesn't care about waiting — it's a machine")],
+            [P("Patience"), P("Gets frustrated waiting"), P("Does not care about waiting, it's a machine")],
             [P("Quit decision"), P("Gives up out of emotion"), P("Quits based on cost calculations")],
             [P("Provider loyalty"), P("Subscribes to one service"), P("Holds API keys for many providers")],
-            [P("Switching cost"), P("High — has to learn new interface"), P("Near zero — just change the endpoint URL")],
+            [P("Switching cost"), P("High, has to learn new interface"), P("Near zero, just change the endpoint URL")],
             [P("Information"), P("May not know the routing strategy"), P("Can benchmark and detect the strategy")],
             [P("Volume"), P("A few tasks per day"), P("Hundreds or thousands of API calls per session")],
         ],
@@ -539,12 +553,12 @@ def build_pdf():
     plain(
         "Since &epsilon; (the agent's tiny cost of waiting) is close to zero, the net value is "
         "almost always positive. Both models are always worth using for an agent. The agent never "
-        "\"gives up out of frustration\" — it only quits if the math says to."
+        "\"gives up out of frustration.\" It only quits if the math says to."
     )
 
     sub("3.2", "Change 2: Multiple Providers Compete")
     body(
-        "The AI market is an oligopoly — a small number of large companies (OpenAI, Anthropic, "
+        "The AI market is an oligopoly, a small number of large companies (OpenAI, Anthropic, "
         "Google, DeepSeek) competing for the same customers. An agent can call any of them."
     )
 
@@ -560,7 +574,7 @@ def build_pdf():
         "",
         "  Each provider picks routing (i_j, s_j)",
         "  Agent picks how to split traffic (alpha_1, alpha_2, alpha_3)",
-    ], title="Multi-Provider Agent Routing Game")
+    ], title="Multi-Provider Agent Routing Game", bar=TEAL)
 
     plain(
         "Instead of one company deciding which model to use and one person reacting, there are "
@@ -571,13 +585,13 @@ def build_pdf():
     story.append(PageBreak())
 
     # ==================================================================
-    #  4. PROPOSED MODEL — TECHNICAL SETUP
+    #  4. PROPOSED MODEL
     # ==================================================================
-    sec("4", "Proposed Model")
+    sec("4", "Proposed Model", PURPLE)
 
     body(
         "We now define the multi-provider agent game formally. Every new variable is explained "
-        "immediately after introduction."
+        "immediately after it's introduced."
     )
 
     sub("4.1", "Providers")
@@ -602,7 +616,7 @@ def build_pdf():
     body("The agent's delay cost is scaled by a small factor &epsilon;:")
     eq("t<sub>ji</sub><sup>A</sup> = &epsilon; &middot; t<sub>ji</sub>, &nbsp;&nbsp;&nbsp; where &epsilon; &ge; 0 is small")
     plain(
-        "The agent still experiences <i>some</i> cost from waiting — its own compute resources "
+        "The agent still has <i>some</i> cost from waiting. Its own compute resources "
         "are tied up while waiting for a response. But this cost is tiny compared to a human's "
         "frustration. As &epsilon; approaches 0, the agent becomes perfectly patient."
     )
@@ -611,7 +625,7 @@ def build_pdf():
     eq("&xi;<sub>ji</sub><sup>A</sup> = V &times; p<sub>ji</sub> &minus; &epsilon; &times; t<sub>ji</sub>")
     plain(
         "Same formula as Mahmood, but with the much smaller delay cost. Since &epsilon; is tiny, "
-        "this is almost always positive — meaning both models from every provider are \"worth it\" "
+        "this is almost always positive, meaning both models from every provider are \"worth it\" "
         "for the agent."
     )
 
@@ -624,7 +638,7 @@ def build_pdf():
     plain(
         "The agent sends some fraction of its work to each provider. All fractions add up to 1 "
         "(100% of tasks go somewhere). The agent might send 60% to Anthropic, 30% to OpenAI, "
-        "and 10% to Google — whatever mix gives the best results."
+        "and 10% to Google, whatever mix gives the best results."
     )
     gap(4)
     body("The agent's optimization problem:")
@@ -635,7 +649,7 @@ def build_pdf():
         "and q<sub>j</sub>* is the agent's optimal quit rate for each provider."
     )
 
-    sub("4.4", "The Churn Penalty Becomes Endogenous")
+    sub("4.4", "The Churn Penalty Becomes Dynamic")
     body(
         "In Mahmood (2026), P (the penalty for losing a user) is a fixed number. In the "
         "multi-provider game, it becomes a <i>function</i> of the competition:"
@@ -643,16 +657,17 @@ def build_pdf():
     eq("P<sub>j</sub> = P<sub>j</sub>(s<sub>1</sub>, ..., s<sub>N</sub>)")
     plain(
         "The penalty for losing an agent depends on what the competitors are offering. If your "
-        "rivals offer great routing, losing the agent is very costly — it goes straight to them. "
-        "If all competitors are equally bad, losing the agent isn't as painful. This is the key "
+        "rivals offer great routing, losing the agent is very costly because it goes straight to them. "
+        "If all competitors are equally bad, losing the agent is not as painful. This is the key "
         "structural change from Mahmood's fixed-P model."
     )
 
     callout(
         "<b>Why this matters:</b> Mahmood showed that throttling only works when P is low "
-        "(Proposition 2). But in a competitive market, P is <i>endogenously high</i> because "
-        "losing a user means losing them to a competitor. Competition naturally raises P, which "
-        "may kill the throttling incentive without any regulation."
+        "(Proposition 2). But in a competitive market, P is <i>naturally high</i> because "
+        "losing a user means losing them to a competitor. Competition raises P on its own, which "
+        "may kill the throttling incentive without any regulation.",
+        bg=BG_PURPLE, bar=PURPLE
     )
 
     sub("4.5", "The Full Game Structure")
@@ -666,13 +681,13 @@ def build_pdf():
         "",
         "STAGE 3:  Tasks play out according to the Markov chain",
         "          Same step-by-step process as Mahmood (2026)",
-    ], title="Three-Stage Game Structure")
+    ], title="Three-Stage Game Structure", bar=PURPLE)
 
     plain(
         "The providers all pick their strategies at the same time (that's a Nash game between "
         "them). Then the agent sees what everyone is offering and decides how to split its traffic "
-        "(that's the Stackelberg part — providers move first, agent reacts). Then tasks actually "
-        "happen following the same Markov chain as Mahmood's paper."
+        "(that's the Stackelberg part, providers move first, agent reacts). Then tasks play out "
+        "following the same Markov chain as Mahmood's paper."
     )
 
     story.append(PageBreak())
@@ -680,61 +695,87 @@ def build_pdf():
     # ==================================================================
     #  5. EXPECTED RESULTS
     # ==================================================================
-    sec("5", "Expected Results")
+    sec("5", "Expected Results", ORANGE)
 
     body(
-        "Each result below maps directly to a specific finding in Mahmood (2026) and states "
-        "what we expect changes."
+        "Below are three core predictions. Each one takes a specific result from Mahmood (2026) "
+        "and asks: does it still hold when the user is an agent shopping across competitors?"
     )
 
-    gap(4)
-    sub("5.1", "Three of the Four User Regimes Disappear")
-    body(
-        "<b>Mahmood's finding (Theorem 2):</b> Users fall into one of four behavioral modes "
-        "depending on whether each model is \"worth the wait\" (&xi; positive or negative)."
+    # -- Result 1 --
+    gap(6)
+    callout(
+        "<b>RESULT 1: Three of the four user regimes disappear.</b>",
+        bg=BG_ORANGE, bar=ORANGE
     )
     body(
-        "<b>What changes:</b> An agent's waiting cost is near zero, so &xi; is almost always "
-        "positive for both models. The agent always stays. Three of the four regimes vanish — "
-        "only Regime 1 (\"never quit\") survives."
+        "<b>What Mahmood showed (Theorem 2):</b> Human users fall into one of four behavioral "
+        "modes depending on whether each model is \"worth the wait\" or not."
     )
     body(
-        "<b>Why it matters:</b> The provider can no longer steer user behavior by adjusting "
-        "the routing. Against agents, that lever is gone."
+        "<b>What changes with agents:</b> An agent's waiting cost is nearly zero. "
+        "That makes &xi; positive for both models, every time. So the agent always stays and "
+        "keeps re-prompting. Three of the four regimes go away. Only Regime 1 survives: "
+        "\"both models are worth it, never quit.\""
     )
-
-    gap(4)
-    sub("5.2", "Deliberate Slowdowns Stop Working")
-    body(
-        "<b>Mahmood's finding (Proposition 2):</b> When the penalty for losing a user (P) is "
-        "low, companies save money by making models slower on purpose — users give up, company "
-        "spends less on compute."
-    )
-    body(
-        "<b>What changes:</b> Two things kill this. First, agents don't care about speed — "
-        "slowing things down doesn't make them leave. Second, competition makes P high — "
-        "if you throttle, the agent goes to your competitor and never comes back."
-    )
-    body(
-        "<b>Why it matters:</b> The scariest result in Mahmood's paper gets naturally eliminated "
-        "by competition and agent rationality — no regulation needed."
+    callout(
+        "<b>The takeaway:</b> With human users, the provider could influence behavior by "
+        "adjusting the cascade rate. Against agents, that lever does not work anymore. "
+        "The agent stays regardless.",
+        bg=BG_GREEN, bar=GREEN
     )
 
-    gap(4)
-    sub("5.3", "Competition Shrinks the Gap Between Provider and User Interests")
-    body(
-        "<b>Mahmood's finding (Proposition 1):</b> There's a measurable gap (&Delta;U) between "
-        "what's best for the user and what the provider actually does."
+    # -- Result 2 --
+    gap(6)
+    callout(
+        "<b>RESULT 2: Deliberate slowdowns stop working.</b>",
+        bg=BG_ORANGE, bar=ORANGE
     )
     body(
-        "<b>What changes:</b> More providers means a smaller gap. With many competitors, any "
-        "provider that deviates from what's best for the agent loses traffic instantly. But "
-        "with just a few providers (the realistic case — OpenAI, Anthropic, Google), there's "
-        "still a risk of quiet coordination where everyone routes to cheap models."
+        "<b>What Mahmood showed (Proposition 2):</b> When the penalty for losing a user (P) is "
+        "low, companies can save money by making models slower on purpose. Users give up, and "
+        "the company spends less on compute."
+    )
+    body("<b>What changes with agents + competition:</b>")
+    bullet(
+        "<b>Agents don't care about speed.</b> Making the model slower does not make an agent "
+        "leave. It just waits."
+    )
+    bullet(
+        "<b>Competition makes P high.</b> If you throttle, the agent immediately shifts all "
+        "its traffic to your competitor. The cost of losing that agent is huge, because it "
+        "takes thousands of future API calls with it."
+    )
+    callout(
+        "<b>The takeaway:</b> The scariest result in Mahmood's paper gets naturally eliminated. "
+        "Competition and agent rationality together kill the throttling incentive, "
+        "no regulation needed.",
+        bg=BG_GREEN, bar=GREEN
+    )
+
+    # -- Result 3 --
+    gap(6)
+    callout(
+        "<b>RESULT 3: Competition shrinks the gap between provider and user interests.</b>",
+        bg=BG_ORANGE, bar=ORANGE
     )
     body(
-        "<b>Why it matters:</b> Tells us exactly how much competition we need before users "
-        "are truly protected."
+        "<b>What Mahmood showed (Proposition 1):</b> There is a measurable gap (&Delta;U) "
+        "between what is best for the user and what the provider actually does. With one "
+        "provider, this gap can be large."
+    )
+    body(
+        "<b>What changes with competition:</b> More providers means a smaller gap. "
+        "With many competitors, any provider that routes poorly loses traffic instantly. "
+        "But with only a few providers (the realistic case: OpenAI, Anthropic, Google), "
+        "there is still a risk. If all of them route to cheap models, the agent has no "
+        "better option. This is where quiet coordination becomes a concern."
+    )
+    callout(
+        "<b>The takeaway:</b> Competition helps, but does not fully solve the problem unless "
+        "there are enough providers. This tells us exactly how much competition is needed "
+        "before users are truly protected.",
+        bg=BG_GREEN, bar=GREEN
     )
 
     story.append(PageBreak())
@@ -742,20 +783,20 @@ def build_pdf():
     # ==================================================================
     #  6. WHY THIS PROJECT
     # ==================================================================
-    sec("6", "Why This Is the Right Project")
+    sec("6", "Why This Is the Right Project", GREEN)
 
     sub("6.1", "It's Directly Built on Prof. Mahmood's Work")
     make_table(
         [
-            [P("<b>Mahmood result</b>"), P("<b>This project</b>")],
+            [P("<b>Mahmood result</b>"), P("<b>What this project does with it</b>")],
             [P("Stackelberg game (1 provider, 1 user)"), P("Same game structure with N providers + 1 agent")],
-            [P("Net value &xi;<sub>i</sub> = Vp<sub>i</sub> &minus; t<sub>i</sub>"), P("Same formula with &epsilon;&middot;t — shows regimes collapse")],
-            [P("Theorem 2: Four user regimes"), P("Re-derive — three regimes disappear for agents")],
-            [P("Theorems 3\u20135: Static routing optimal"), P("Re-examine — does competition make cascading valuable?")],
+            [P("Net value &xi;<sub>i</sub> = Vp<sub>i</sub> &minus; t<sub>i</sub>"), P("Same formula with &epsilon;&middot;t, shows regimes collapse")],
+            [P("Theorem 2: Four user regimes"), P("Re-derive, three regimes disappear for agents")],
+            [P("Theorems 3-5: Static routing optimal"), P("Re-examine, does competition make cascading valuable?")],
             [P("Proposition 1: Misalignment gap"), P("How does the gap change with N providers?")],
             [P("Proposition 2: Throttling risk"), P("Show throttling fails against agents + competition")],
-            [P("NeurIPS paper: Pricing competition"), P("This does for <i>routing</i> what that did for <i>pricing</i>")],
-            [P("SSHRC: Equity and AI"), P("Who gets good service — agents vs. humans, big vs. small?")],
+            [P("NeurIPS paper: Pricing competition"), P("This does for <i>routing</i> what that paper did for <i>pricing</i>")],
+            [P("SSHRC: Equity and AI"), P("Who gets good service? Agents vs. humans, big vs. small")],
         ],
         col_widths=[W*0.45, W*0.55],
     )
@@ -781,29 +822,29 @@ def build_pdf():
     bullet("Regulators need to know: does competition fix the throttling problem, or not?")
 
     sub("6.4", "It Fits Prof. Mahmood's Research Style")
-    bullet("<b>Clean game theory</b> with closed-form results — not simulations.")
-    bullet("<b>Real-world motivation</b> — starts with what's happening in the market, not abstract theory.")
-    bullet("<b>Societal angle</b> — does competition protect users or create new exploitation?")
-    bullet("<b>Short, focused paper</b> — one extension, a few new results, direct comparison to existing work.")
+    bullet("<b>Clean game theory</b> with closed-form results, not simulations.")
+    bullet("<b>Real-world motivation</b>, starts with what's happening in the market, not abstract theory.")
+    bullet("<b>Societal angle</b>, does competition protect users or create new exploitation?")
+    bullet("<b>Short, focused paper</b>, one extension, a few new results, direct comparison to existing work.")
 
     story.append(PageBreak())
 
     # ==================================================================
     #  7. METHODOLOGY
     # ==================================================================
-    sec("7", "Methodology")
+    sec("7", "Methodology", NAVY)
 
     body("Same methodology as Mahmood (2026), extended in three stages:")
     bullet(
-        "<b>Stage 1 — Agent best response.</b> How does the agent split traffic across "
+        "<b>Stage 1: Agent best response.</b> How does the agent split traffic across "
         "providers? When does it quit one provider for another? (Extends Theorems 1-2)"
     )
     bullet(
-        "<b>Stage 2 — Provider equilibrium.</b> What routing strategies do competing "
+        "<b>Stage 2: Provider equilibrium.</b> What routing strategies do competing "
         "providers settle on? (Extends Theorems 3-5)"
     )
     bullet(
-        "<b>Stage 3 — Welfare analysis.</b> Does competition close the misalignment gap? "
+        "<b>Stage 3: Welfare analysis.</b> Does competition close the misalignment gap? "
         "Does throttling survive? (Extends Propositions 1-2)"
     )
     gap(4)
@@ -817,12 +858,13 @@ def build_pdf():
     line()
 
     # -- bottom line --
-    warn(
-        "<b>The bottom line:</b> This research takes Prof. Mahmood's exact framework — his "
-        "variables, his equations, his theorems — and brings it into the most important market "
+    callout(
+        "<b>The bottom line:</b> This research takes Prof. Mahmood's exact framework, his "
+        "variables, his equations, his theorems, and brings it into the most important market "
         "shift of 2026: the rise of AI agents as the primary consumers of AI inference. Every "
         "result in the ICLR paper has a matching question in this project. The math is the same. "
-        "The setting is new. The lane is open."
+        "The setting is new. The lane is open.",
+        bg=BG_ORANGE, bar=ORANGE
     )
 
     gap(14)
