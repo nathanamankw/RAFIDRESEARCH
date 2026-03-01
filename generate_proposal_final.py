@@ -236,24 +236,32 @@ def build_pdf():
     # ==================================================================
     #  TITLE PAGE
     # ==================================================================
-    gap(50)
+    gap(40)
     story.append(Paragraph(
-        "Strategic Routing in Multi-Provider AI Markets:<br/>"
-        "A Game-Theoretic Analysis of Agent-Driven Model Selection",
+        "When the User Is an Algorithm",
         sty["Title"]
     ))
-    gap(6)
-    story.append(Paragraph("Research Proposal", sty["Subtitle"]))
-    gap(16)
+    gap(4)
+    story.append(Paragraph(
+        "Routing, Competition, and the Rise of AI Agents<br/>"
+        "as the Primary Consumers of LLM Inference",
+        sty["Subtitle"]
+    ))
+    gap(20)
+    line()
+    gap(10)
+    story.append(Paragraph("Research Proposal", ParagraphStyle("RP",
+        parent=styles["Normal"], fontSize=11, leading=14, alignment=TA_CENTER,
+        textColor=NAVY, fontName="Helvetica-Bold")))
+    gap(14)
     story.append(Paragraph("Nathan Amankwah", sty["Author"]))
     story.append(Paragraph("Prepared for Prof. Rafid Mahmood", sty["Author"]))
     story.append(Paragraph("Telfer School of Management &middot; University of Ottawa", sty["Author"]))
     gap(6)
     story.append(Paragraph("March 2026", sty["Author"]))
-    gap(30)
-    line()
+    gap(24)
     callout(
-        "<b>One-sentence summary:</b> Prof. Mahmood's ICLR paper models how one AI company "
+        "<b>In one sentence:</b> Prof. Mahmood's ICLR 2026 paper models how one AI company "
         "routes tasks for one human user. This proposal asks: what changes when the user is an "
         "AI agent that can switch between multiple competing providers instantly?",
         bg=BG_BLUE, bar=NAVY
@@ -612,6 +620,27 @@ def build_pdf():
         "from Mahmood (2026), but now each provider has their own."
     )
 
+    gap(4)
+    body(
+        "To make this concrete, here are real API prices as of early 2026, expressed as cost "
+        "per 1 million output tokens:"
+    )
+    make_table(
+        [
+            [P("<b>Provider</b>"), P("<b>Cheap model (M<sub>1</sub>)</b>"), P("<b>Cost</b>"), P("<b>Expensive model (M<sub>2</sub>)</b>"), P("<b>Cost</b>")],
+            [P("OpenAI"), P("GPT-4o mini"), P("$0.60/M tokens"), P("GPT-4o"), P("$10.00/M tokens")],
+            [P("Anthropic"), P("Claude Haiku 4.5"), P("$5.00/M tokens"), P("Claude Sonnet 4.6"), P("$15.00/M tokens")],
+            [P("Google"), P("Gemini 2.0 Flash"), P("$0.40/M tokens"), P("Gemini 3 Pro"), P("$12.00/M tokens")],
+        ],
+        col_widths=[W*0.14, W*0.22, W*0.16, W*0.26, W*0.22],
+    )
+    plain(
+        "These are the real c<sub>j1</sub> and c<sub>j2</sub> values in our model. Notice how "
+        "different the cost structures are: OpenAI's cheap model costs $0.60 while Anthropic's "
+        "costs $5.00. This means the \"right\" provider for a given task depends heavily on "
+        "whether the agent needs the cheap or expensive model. The game is not symmetric."
+    )
+
     sub("4.2", "The Agent")
     body("The agent's delay cost is scaled by a small factor &epsilon;:")
     eq("t<sub>ji</sub><sup>A</sup> = &epsilon; &middot; t<sub>ji</sub>, &nbsp;&nbsp;&nbsp; where &epsilon; &ge; 0 is small")
@@ -778,6 +807,34 @@ def build_pdf():
         bg=BG_GREEN, bar=GREEN
     )
 
+    # -- Result 4 --
+    gap(6)
+    callout(
+        "<b>RESULT 4: Cascading may become a competitive weapon.</b>",
+        bg=BG_ORANGE, bar=ORANGE
+    )
+    body(
+        "<b>What Mahmood showed (Theorems 3, 4, and 5):</b> For a single provider, the optimal "
+        "routing strategy is almost always static. That means: pick one model and stick with it. "
+        "Cascading (trying the cheap model first, then escalating to the expensive one if it "
+        "fails) is rarely worth the extra cost. It only helps in a narrow range where the two "
+        "models are very different in value."
+    )
+    body(
+        "<b>What changes with competition:</b> When multiple providers are fighting for the "
+        "same agent, cascading becomes something you can advertise. A provider could say: "
+        "\"We always escalate to our best model if the first one fails.\" That guarantee "
+        "attracts agents who want reliability. Competitors offering only static routing "
+        "look worse by comparison. So competition could turn cascading from a cost burden "
+        "into a selling point."
+    )
+    callout(
+        "<b>The takeaway:</b> Mahmood shows cascading is rarely optimal when there's no "
+        "competition. We expect to show that competition can make it optimal, because providers "
+        "use it to differentiate themselves and win traffic.",
+        bg=BG_GREEN, bar=GREEN
+    )
+
     story.append(PageBreak())
 
     # ==================================================================
@@ -874,6 +931,61 @@ def build_pdf():
     story.append(Paragraph(
         "For discussion with Prof. Rafid Mahmood &middot; Telfer School of Management", sty["Small"]
     ))
+
+    story.append(PageBreak())
+
+    # ==================================================================
+    #  REFERENCES
+    # ==================================================================
+    sec("", "References", NAVY)
+
+    ref_style = ParagraphStyle("RefItem", parent=styles["Normal"],
+        fontSize=9, leading=12.5, alignment=TA_LEFT,
+        spaceAfter=5, textColor=DGREY, fontName="Helvetica",
+        leftIndent=20, firstLineIndent=-20)
+
+    refs = [
+        "Armstrong, M. (2006). Competition in two-sided markets. "
+        "<i>The RAND Journal of Economics</i>, 37(3), 668-691.",
+
+        "Castro, F., Gao, J., &amp; Martin, S. (2023). Human-AI interactions and societal pitfalls. "
+        "<i>arXiv preprint arXiv:2309.10448</i>.",
+
+        "Chen, L., Zaharia, M., &amp; Zou, J. (2023). FrugalGPT: How to use large language models "
+        "while reducing cost and improving performance. <i>arXiv preprint arXiv:2305.05176</i>.",
+
+        "Dekoninck, J., Baader, M., &amp; Vechev, M. (2025). A unified approach to routing and "
+        "cascading for LLMs. In <i>Proceedings of ICML 2025</i>.",
+
+        "Ding, D., Mallick, A., Wang, C., et al. (2024). Hybrid LLM: Cost-efficient and "
+        "quality-aware query routing. In <i>Proceedings of ICLR 2024</i>.",
+
+        "Erol, M. H., El, B., Suzgun, M., et al. (2025). Cost-of-pass: An economic framework for "
+        "evaluating language models. <i>arXiv preprint arXiv:2504.13359</i>.",
+
+        "Hu, Q. J., Bieker, J., Li, X., et al. (2024). RouterBench: A benchmark for multi-LLM "
+        "routing system. <i>arXiv preprint arXiv:2403.12031</i>.",
+
+        "Mahmood, R. (2024). Pricing and competition for generative AI. <i>Advances in Neural "
+        "Information Processing Systems</i>, 37, 75727-75748.",
+
+        "Mahmood, R. (2026). Routing, cascades, and user choice for LLMs. Under review at "
+        "<i>ICLR 2026</i>.",
+
+        "Park, J. S., O'Brien, J. C., Cai, C. J., et al. (2023). Generative agents: Interactive "
+        "simulacra of human behavior. In <i>Proceedings of UIST 2023</i>.",
+
+        "Rochet, J.-C. &amp; Tirole, J. (2003). Platform competition in two-sided markets. "
+        "<i>Journal of the European Economic Association</i>, 1(4), 990-1029.",
+
+        "Wang, L., Ma, C., Feng, X., et al. (2024). A survey on large language model based "
+        "autonomous agents. <i>Frontiers of Computer Science</i>, 18(6).",
+
+        "Yue, M., Zhao, J., Zhang, M., et al. (2023). Large language model cascades with mixture "
+        "of thoughts representations. <i>arXiv preprint arXiv:2310.03094</i>.",
+    ]
+    for ref in refs:
+        story.append(Paragraph(ref, ref_style))
 
     # ── build ────────────────────────────────────────────────────────
     doc.build(story)
