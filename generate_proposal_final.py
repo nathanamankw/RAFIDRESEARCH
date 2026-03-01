@@ -254,7 +254,7 @@ def build_pdf():
         ("4", "Proposed Model", "The new game — technical setup with plain-English explanations"),
         ("5", "Expected Results", "What we think happens to each of Mahmood's findings"),
         ("6", "Why This Project", "Why this is the right research for Prof. Mahmood's program"),
-        ("7", "Methodology & Timeline", "How the work gets done"),
+        ("7", "Methodology", "How the work gets done"),
     ]
     for num, title, desc in toc:
         story.append(Paragraph(
@@ -683,75 +683,58 @@ def build_pdf():
     sec("5", "Expected Results")
 
     body(
-        "We now describe what we expect to prove, mapping each finding to a specific result "
-        "in Mahmood (2026)."
+        "Each result below maps directly to a specific finding in Mahmood (2026) and states "
+        "what we expect changes."
     )
 
-    sub("5.1", "Regime Collapse (Extends Theorem 2)")
+    gap(4)
+    sub("5.1", "Three of the Four User Regimes Disappear")
     body(
-        "Mahmood identifies four regimes of user behavior. When the user is an agent with "
-        "&epsilon; &asymp; 0, the net value &xi;<sub>ji</sub><sup>A</sup> &asymp; V &times; p<sub>ji</sub> "
-        "is positive for both models from every provider. This means:"
+        "<b>Mahmood's finding (Theorem 2):</b> Users fall into one of four behavioral modes "
+        "depending on whether each model is \"worth the wait\" (&xi; positive or negative)."
     )
-    warn(
-        "<b>Expected result:</b> Regimes 2, 3, and 4 from Theorem 2 effectively disappear for "
-        "agent users. Only Regime 1 (both models value-dominated, user never quits) survives. "
-        "The provider loses its ability to influence user behavior through routing."
-    )
-    plain(
-        "When dealing with humans, the provider could manipulate the cascade rate to push users "
-        "into different behavioral modes. Against agents, that lever disappears. The agent "
-        "always stays and keeps trying because both models are always worth it."
-    )
-
-    sub("5.2", "Throttling Fails (Extends Proposition 2)")
-    body("Mahmood's throttling condition:")
-    eq("Throttling works when: P &le; min{c<sub>1</sub>/p<sub>1</sub>, c<sub>2</sub>/p<sub>2</sub>}")
-    body("Two forces destroy this in the multi-provider agent setting:")
-    bullet(
-        "<b>Agent insensitivity.</b> Inflating t<sub>i</sub> doesn't change "
-        "&xi;<sub>i</sub><sup>A</sup> because &epsilon; is tiny. The provider would need to "
-        "inflate latency to extreme levels before the agent cares."
-    )
-    bullet(
-        "<b>Competitive pressure.</b> If provider j throttles, the agent shifts traffic to "
-        "providers k &ne; j. This makes P<sub>j</sub> large (losing the agent is very costly), "
-        "which violates the P &le; min{c<sub>i</sub>/p<sub>i</sub>} condition."
-    )
-    success(
-        "<b>Expected result:</b> In the multi-provider agent setting, throttling is no longer "
-        "profitable. Competition and agent rationality together eliminate the worst behavior "
-        "Mahmood identified — without needing regulation."
-    )
-
-    sub("5.3", "Misalignment Under Competition (Extends Proposition 1)")
-    body("How the misalignment gap &Delta;U changes with the number of providers:")
-
-    make_table(
-        [
-            [P("<b>Market structure</b>"), P("<b>Expected effect on &Delta;U</b>"), P("<b>Plain English</b>")],
-            [P("Monopoly (N=1)"), P("&Delta;U can be large<br/>(Mahmood's result)"),
-             P("One company, no competition. They route to save money, not to help you.")],
-            [P("Duopoly (N=2)"), P("&Delta;U shrinks but<br/>doesn't vanish"),
-             P("Two providers constrain each other, but each still optimizes for cost.")],
-            [P("Oligopoly (N=3\u20135)"), P("&Delta;U depends on<br/>implicit coordination"),
-             P("The realistic case. If all providers route to cheap models, the agent has no better option. Risk of quiet collusion.")],
-            [P("Many providers<br/>(N &rarr; &infin;)"), P("&Delta;U &rarr; 0"),
-             P("Perfect competition. Any deviation from user-optimal routing loses all traffic instantly.")],
-        ],
-        col_widths=[W*0.18, W*0.25, W*0.57],
-    )
-
-    sub("5.4", "Cascading as Competitive Strategy (Extends Theorems 3-5)")
     body(
-        "Mahmood shows cascading is rarely optimal for a single provider — it adds cost without "
-        "enough benefit. Under competition, this may change:"
+        "<b>What changes:</b> An agent's waiting cost is near zero, so &xi; is almost always "
+        "positive for both models. The agent always stays. Three of the four regimes vanish — "
+        "only Regime 1 (\"never quit\") survives."
     )
-    callout(
-        "<b>Expected result:</b> A provider might offer guaranteed cascading as a "
-        "<i>differentiation strategy</i> — \"we always try our best model if the first one "
-        "fails\" — to attract agents away from competitors who use static routing. "
-        "Competition could make cascading useful in ways it wasn't before."
+    body(
+        "<b>Why it matters:</b> The provider can no longer steer user behavior by adjusting "
+        "the routing. Against agents, that lever is gone."
+    )
+
+    gap(4)
+    sub("5.2", "Deliberate Slowdowns Stop Working")
+    body(
+        "<b>Mahmood's finding (Proposition 2):</b> When the penalty for losing a user (P) is "
+        "low, companies save money by making models slower on purpose — users give up, company "
+        "spends less on compute."
+    )
+    body(
+        "<b>What changes:</b> Two things kill this. First, agents don't care about speed — "
+        "slowing things down doesn't make them leave. Second, competition makes P high — "
+        "if you throttle, the agent goes to your competitor and never comes back."
+    )
+    body(
+        "<b>Why it matters:</b> The scariest result in Mahmood's paper gets naturally eliminated "
+        "by competition and agent rationality — no regulation needed."
+    )
+
+    gap(4)
+    sub("5.3", "Competition Shrinks the Gap Between Provider and User Interests")
+    body(
+        "<b>Mahmood's finding (Proposition 1):</b> There's a measurable gap (&Delta;U) between "
+        "what's best for the user and what the provider actually does."
+    )
+    body(
+        "<b>What changes:</b> More providers means a smaller gap. With many competitors, any "
+        "provider that deviates from what's best for the agent loses traffic instantly. But "
+        "with just a few providers (the realistic case — OpenAI, Anthropic, Google), there's "
+        "still a risk of quiet coordination where everyone routes to cheap models."
+    )
+    body(
+        "<b>Why it matters:</b> Tells us exactly how much competition we need before users "
+        "are truly protected."
     )
 
     story.append(PageBreak())
@@ -806,48 +789,29 @@ def build_pdf():
     story.append(PageBreak())
 
     # ==================================================================
-    #  7. METHODOLOGY & TIMELINE
+    #  7. METHODOLOGY
     # ==================================================================
-    sec("7", "Methodology and Timeline")
+    sec("7", "Methodology")
 
-    sub("7.1", "Approach")
     body("Same methodology as Mahmood (2026), extended in three stages:")
     bullet(
-        "<b>Stage 1:</b> Derive the agent's best response — how does it split traffic and when "
-        "does it quit a provider? (Extends Theorems 1-2)"
+        "<b>Stage 1 — Agent best response.</b> How does the agent split traffic across "
+        "providers? When does it quit one provider for another? (Extends Theorems 1-2)"
     )
     bullet(
-        "<b>Stage 2:</b> Characterize the Nash equilibrium among competing providers. "
-        "(Extends Theorems 3-5)"
+        "<b>Stage 2 — Provider equilibrium.</b> What routing strategies do competing "
+        "providers settle on? (Extends Theorems 3-5)"
     )
     bullet(
-        "<b>Stage 3:</b> Analyze misalignment, throttling, and welfare under competition. "
-        "(Extends Propositions 1-2)"
+        "<b>Stage 3 — Welfare analysis.</b> Does competition close the misalignment gap? "
+        "Does throttling survive? (Extends Propositions 1-2)"
     )
-    body("Complemented by numerical experiments using real, public API pricing data.")
-
-    sub("7.2", "Data (All Public)")
-    bullet("API pricing: OpenAI, Anthropic, Google publish per-token costs.")
-    bullet("Latency benchmarks: ArtificialAnalysis.ai, LMSys.")
-    bullet("Agent usage: published framework documentation and industry reports.")
-
-    sub("7.3", "Timeline")
-    make_table(
-        [
-            [P("<b>Phase</b>"), P("<b>Weeks</b>"), P("<b>Deliverable</b>")],
-            [P("Literature + model setup"), P("1\u20133"), P("Review routing, agents, competition literature. Define the game.")],
-            [P("Agent best response"), P("3\u20137"), P("Formal derivation extending Theorems 1\u20132.")],
-            [P("Provider equilibrium"), P("6\u201310"), P("Nash equilibrium among providers, extending Theorems 3\u20135.")],
-            [P("Welfare analysis"), P("9\u201313"), P("Misalignment and throttling under competition. Extends Props 1\u20132.")],
-            [P("Simulations + writing"), P("11\u201316"), P("Numerical experiments with real data. Full paper draft.")],
-        ],
-        col_widths=[W*0.26, W*0.11, W*0.63],
+    gap(4)
+    body(
+        "Complemented by numerical experiments using publicly available API pricing data "
+        "(OpenAI, Anthropic, Google), latency benchmarks (ArtificialAnalysis.ai), and "
+        "agent usage patterns from framework documentation."
     )
-
-    sub("7.4", "Target Venues")
-    bullet("<b>Primary:</b> ICLR 2027 or NeurIPS 2027")
-    bullet("<b>Secondary:</b> Management Science, Operations Research")
-    bullet("<b>Workshop:</b> EC (Economics and Computation) 2027")
 
     gap(20)
     line()
